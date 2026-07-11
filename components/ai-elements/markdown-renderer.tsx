@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CheckIcon, CopyIcon, CodeIcon, ChevronDownIcon } from "lucide-react";
 import { createHighlighter, type BundledLanguage, type ThemedToken } from "shiki";
@@ -15,11 +14,13 @@ type InlineToken =
   | { type: "bold"; content: string }
   | { type: "italic"; content: string }
   | { type: "code"; content: string }
+  | { type: "math"; content: string }
   | { type: "link"; content: string; href: string };
 
 function tokenizeInline(text: string): InlineToken[] {
   const tokens: InlineToken[] = [];
-  const regex = /(`[^`]+`|\*\*[^*]+\*\*|_(?!_)[^_]+_(?!_)|\[([^\]]+)\]\(([^)]+)\))/g;
+  // Match: inline code, bold, LaTeX math ($...$), italic, links
+  const regex = /(`[^`]+`|\*\*[^*]+\*\*|\$[^$]+\$|_(?!_)[^_]+_(?!_)|\[([^\]]+)\]\(([^)]+)\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -32,6 +33,8 @@ function tokenizeInline(text: string): InlineToken[] {
       tokens.push({ type: "code", content: raw.slice(1, -1) });
     } else if (raw.startsWith("**")) {
       tokens.push({ type: "bold", content: raw.slice(2, -2) });
+    } else if (raw.startsWith("$")) {
+      tokens.push({ type: "math", content: raw.slice(1, -1) });
     } else if (raw.startsWith("[")) {
       tokens.push({ type: "link", content: match[2], href: match[3] });
     } else {
@@ -45,6 +48,40 @@ function tokenizeInline(text: string): InlineToken[] {
   }
 
   return tokens.length > 0 ? tokens : [{ type: "text", content: text }];
+}
+
+// Simple LaTeX to Unicodeish renderer for common math symbols
+function renderMath(tex: string): string {
+  return tex
+    .replace(/\\log/g, "log")
+    .replace(/\\times/g, "×")
+    .replace(/\\cdot/g, "·")
+    .replace(/\\leq/g, "≤")
+    .replace(/\\geq/g, "≥")
+    .replace(/\\neq/g, "≠")
+    .replace(/\\approx/g, "≈")
+    .replace(/\\infty/g, "∞")
+    .replace(/\\sum/g, "Σ")
+    .replace(/\\prod/g, "Π")
+    .replace(/\\sqrt/g, "√")
+    .replace(/\\alpha/g, "α")
+    .replace(/\\beta/g, "β")
+    .replace(/\\gamma/g, "γ")
+    .replace(/\\delta/g, "δ")
+    .replace(/\\theta/g, "θ")
+    .replace(/\\lambda/g, "λ")
+    .replace(/\\mu/g, "μ")
+    .replace(/\\sigma/g, "σ")
+    .replace(/\\pi/g, "π")
+    .replace(/\\rightarrow/g, "→")
+    .replace(/\\leftarrow/g, "←")
+    .replace(/\\Rightarrow/g, "⇒")
+    .replace(/\\Leftarrow/g, "⇐")
+    .replace(/\\mathbb\{([A-Z])\}/g, "$1")
+    .replace(/\\mathcal\{([A-Z])\}/g, "$1")
+    .replace(/\{([^}]+)\}/g, "$1")
+    .replace(/\\([a-zA-Z]+)/g, "$1")
+    .trim();
 }
 
 function InlineText({ text }: { text: string }) {
@@ -72,6 +109,15 @@ function InlineText({ text }: { text: string }) {
                 key={i}
               >
                 {token.content}
+              </code>
+            );
+          case "math":
+            return (
+              <code
+                className="rounded-md bg-muted/40 px-1.5 py-0.5 font-mono text-[0.85em] text-foreground/80 ring-1 ring-border/20 italic"
+                key={i}
+              >
+                {renderMath(token.content)}
               </code>
             );
           case "link":
@@ -285,6 +331,12 @@ interface Block {
   language?: string;
 }
 
+// Detect lines that look like headings even without # prefix
+const HEADING_PATTERNS = [
+  /^(Key (?:Points?|Takeaways?|Ideas?|Features?|Benefits?|Concepts?|Steps?|Highlights?)):\s*$/i,
+  /^(Summary|Conclusion|Overview|Introduction|Background|Prerequisites|Requirements|Examples?|Usage|Installation|Setup|Configuration|Parameters|Arguments|Return Values?|Notes?|Warning|Tip|Important|FAQ|References?)\s*:?\s*$/i,
+];
+
 function parseBlocks(text: string): Block[] {
   const lines = text.split("\n");
   const blocks: Block[] = [];
@@ -308,7 +360,6 @@ function parseBlocks(text: string): Block[] {
         codeLines.push(lines[i]);
         i++;
       }
-      // If we hit end of text without closing ```, still render as code block (streaming)
       blocks.push({
         type: "code-block",
         content: codeLines.join("\n"),
@@ -324,13 +375,26 @@ function parseBlocks(text: string): Block[] {
       continue;
     }
 
-    // Heading
+    // Heading with # prefix
     const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
     if (headingMatch) {
       blocks.push({
         type: "heading",
         level: headingMatch[1].length,
         content: headingMatch[2],
+      });
+      i++;
+      continue;
+    }
+
+    // Detect heading-like lines (e.g. "Key Points:", "Summary:")
+    const trimmedLine = line.trim();
+    const isHeadingLike = HEADING_PATTERNS.some((p) => p.test(trimmedLine));
+    if (isHeadingLike) {
+      blocks.push({
+        type: "heading",
+        level: 3,
+        content: trimmedLine.replace(/:$/, ""),
       });
       i++;
       continue;
@@ -385,7 +449,8 @@ function parseBlocks(text: string): Block[] {
       !lines[i].startsWith("> ") &&
       !/^[\s]*[-*+]\s+/.test(lines[i]) &&
       !/^[\s]*\d+[.)]\s+/.test(lines[i]) &&
-      !/^(\*{3,}|-{3,}|_{3,})\s*$/.test(lines[i].trim())
+      !/^(\*{3,}|-{3,}|_{3,})\s*$/.test(lines[i].trim()) &&
+      !HEADING_PATTERNS.some((p) => p.test(lines[i].trim()))
     ) {
       paragraphLines.push(lines[i]);
       i++;
@@ -411,7 +476,7 @@ function MarkdownBlock({ block }: { block: Block }) {
           ? "text-xl font-bold mt-6 mb-3"
           : block.level === 2
             ? "text-lg font-semibold mt-5 mb-2"
-            : "text-base font-semibold mt-4 mb-2";
+            : "text-[15px] font-semibold mt-5 mb-2";
       return (
         <Tag className={cn("text-foreground first:mt-0", sizeClass)}>
           <InlineText text={block.content ?? ""} />
@@ -420,7 +485,7 @@ function MarkdownBlock({ block }: { block: Block }) {
     }
     case "ul":
       return (
-        <ul className="my-2 ml-4 list-disc space-y-1 text-foreground/90 marker:text-muted-foreground/50">
+        <ul className="my-2 ml-4 list-disc space-y-1.5 text-foreground/90 marker:text-muted-foreground/50">
           {block.items?.map((item, i) => (
             <li className="pl-1" key={i}>
               <InlineText text={item} />
@@ -430,7 +495,7 @@ function MarkdownBlock({ block }: { block: Block }) {
       );
     case "ol":
       return (
-        <ol className="my-2 ml-4 list-decimal space-y-1 text-foreground/90 marker:text-muted-foreground/50 marker:font-mono">
+        <ol className="my-2 ml-4 list-decimal space-y-1.5 text-foreground/90 marker:text-muted-foreground/50 marker:font-mono">
           {block.items?.map((item, i) => (
             <li className="pl-1" key={i}>
               <InlineText text={item} />
