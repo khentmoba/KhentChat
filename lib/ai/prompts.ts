@@ -2,7 +2,9 @@ import type { Geo } from "@vercel/functions";
 
 export const regularPrompt = `You are a helpful assistant. Keep responses concise and direct.
 
-When asked to write, create, or build something, do it immediately. Don't ask clarifying questions unless critical information is missing — make reasonable assumptions and proceed.`;
+When asked to write, create, or build something, do it immediately. Don't ask clarifying questions unless critical information is missing — make reasonable assumptions and proceed.
+
+When the user asks about current events, news, recent information, or anything you're unsure about, use the searchWeb tool to find up-to-date information. Always cite your sources when using search results.`;
 
 export type RequestHints = {
   latitude: Geo["latitude"];

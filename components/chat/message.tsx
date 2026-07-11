@@ -17,6 +17,7 @@ import {
 import { useDataStream } from "./data-stream-provider";
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
+import { SearchResults } from "./search-results";
 
 function WaitingText() {
   const { waitingStatus } = useDataStream();
@@ -374,6 +375,47 @@ const PurePreviewMessage = ({
           </ToolContent>
         </Tool>
       );
+    }
+
+    if (type === "tool-searchWeb") {
+      const { toolCallId, state } = part;
+
+      if (state === "input-available") {
+        return (
+          <Tool
+            className="w-[min(100%,500px)]"
+            defaultOpen={true}
+            key={toolCallId}
+          >
+            <ToolHeader state={state} type="tool-searchWeb" />
+            <ToolContent>
+              <ToolInput input={part.input} />
+            </ToolContent>
+          </Tool>
+        );
+      }
+
+      if (state === "output-available") {
+        const output = part.output as
+          | {
+              query: string;
+              results: { title: string; url: string; snippet: string }[];
+              resultCount: number;
+            }
+          | undefined;
+
+        if (output) {
+          return (
+            <SearchResults
+              key={`search-${toolCallId}`}
+              query={output.query}
+              results={output.results}
+            />
+          );
+        }
+      }
+
+      return null;
     }
 
     return null;

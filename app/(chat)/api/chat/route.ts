@@ -21,6 +21,7 @@ import {
 } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { searchWebTool } from "@/lib/ai/tools/web-search";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -283,7 +284,9 @@ export async function POST(request: Request) {
             functionId: "stream-text",
             isEnabled: isProductionEnvironment,
           },
-          tools: {},
+          tools: {
+            searchWeb: searchWebTool,
+          },
         });
 
         dataStream.merge(

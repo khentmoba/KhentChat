@@ -13,6 +13,14 @@ export type ChatTools = {
   createDocument: { input: Record<string, unknown>; output: unknown };
   updateDocument: { input: Record<string, unknown>; output: unknown };
   requestSuggestions: { input: Record<string, unknown>; output: unknown };
+  searchWeb: {
+    input: { query: string };
+    output: {
+      query: string;
+      results: { title: string; url: string; snippet: string }[];
+      resultCount: number;
+    };
+  };
 };
 
 export type WaitingStatusData = {
