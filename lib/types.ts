@@ -21,6 +21,17 @@ export type ChatTools = {
       resultCount: number;
     };
   };
+  fetchUrl: {
+    input: { url: string };
+    output: {
+      url: string;
+      success: boolean;
+      title: string;
+      content: string;
+      contentType: string;
+      error?: string;
+    };
+  };
 };
 
 export type WaitingStatusData = {

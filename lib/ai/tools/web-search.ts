@@ -15,6 +15,34 @@ function extractUrl(rawUrl: string): string {
   return rawUrl;
 }
 
+function parseResults(html: string): SearchResult[] {
+  const results: SearchResult[] = [];
+  const blocks = html.split(/class="result results_links/);
+
+  for (let i = 1; i < blocks.length && results.length < 8; i += 1) {
+    const block = blocks[i];
+
+    const titleMatch = block.match(
+      /class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/
+    );
+    const snippetMatch = block.match(
+      /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/
+    );
+
+    if (titleMatch && snippetMatch) {
+      const url = extractUrl(titleMatch[1]);
+      const title = titleMatch[2].replace(/<[^>]+>/g, "").trim();
+      const snippet = snippetMatch[1].replace(/<[^>]+>/g, "").trim();
+
+      if (title && url && snippet) {
+        results.push({ snippet, title, url });
+      }
+    }
+  }
+
+  return results;
+}
+
 async function searchDuckDuckGo(query: string): Promise<SearchResult[]> {
   try {
     const params = new URLSearchParams({
@@ -37,57 +65,7 @@ async function searchDuckDuckGo(query: string): Promise<SearchResult[]> {
     }
 
     const html = await res.text();
-    const results: SearchResult[] = [];
-
-    const resultRegex =
-      /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
-
-    for (const match of html.matchAll(resultRegex)) {
-      if (results.length >= 5) {
-        break;
-      }
-      const [, rawUrl, rawTitle, rawSnippet] = match;
-      const url = extractUrl(rawUrl);
-      const title = rawTitle.replace(/<[^>]+>/g, "").trim();
-      const snippet = rawSnippet.replace(/<[^>]+>/g, "").trim();
-
-      if (title && url && snippet) {
-        results.push({ snippet, title, url });
-      }
-    }
-
-    if (results.length === 0) {
-      const simpleRegex = /<a[^>]+class="result__a"[^>]*>([\s\S]*?)<\/a>/g;
-      const snippetRegex =
-        /<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
-      const hrefRegex = /<a[^>]+class="result__a"[^>]+href="([^"]*)"/g;
-
-      const titles: string[] = [];
-      const snippets: string[] = [];
-      const hrefs: string[] = [];
-
-      for (const m of html.matchAll(simpleRegex)) {
-        titles.push(m[1].replace(/<[^>]+>/g, "").trim());
-      }
-      for (const m of html.matchAll(snippetRegex)) {
-        snippets.push(m[1].replace(/<[^>]+>/g, "").trim());
-      }
-      for (const m of html.matchAll(hrefRegex)) {
-        hrefs.push(extractUrl(m[1]));
-      }
-
-      const count = Math.min(titles.length, snippets.length, hrefs.length, 5);
-      for (let i = 0; i < count; i += 1) {
-        const title = titles[i];
-        const url = hrefs[i];
-        const snippet = snippets[i];
-        if (title && url && snippet) {
-          results.push({ snippet, title, url });
-        }
-      }
-    }
-
-    return results;
+    return parseResults(html);
   } catch {
     return [];
   }

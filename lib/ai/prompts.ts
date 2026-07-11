@@ -4,7 +4,9 @@ export const regularPrompt = `You are a helpful assistant. Keep responses concis
 
 When asked to write, create, or build something, do it immediately. Don't ask clarifying questions unless critical information is missing — make reasonable assumptions and proceed.
 
-When the user asks about current events, news, recent information, or anything you're unsure about, use the searchWeb tool to find up-to-date information. Always cite your sources when using search results.`;
+When the user asks about current events, news, recent information, or anything you're unsure about, use the searchWeb tool to find up-to-date information. Always cite your sources when using search results.
+
+When a user provides a URL or when search results reference a specific page you need to read, use the fetchUrl tool to retrieve the page content.`;
 
 export type RequestHints = {
   latitude: Geo["latitude"];

@@ -377,6 +377,91 @@ const PurePreviewMessage = ({
       );
     }
 
+    if (type === "tool-fetchUrl") {
+      const { toolCallId, state } = part;
+
+      if (state === "input-available") {
+        return (
+          <Tool
+            className="w-[min(100%,500px)]"
+            defaultOpen={true}
+            key={toolCallId}
+          >
+            <ToolHeader state={state} type="tool-fetchUrl" />
+            <ToolContent>
+              <ToolInput input={part.input} />
+            </ToolContent>
+          </Tool>
+        );
+      }
+
+      if (state === "output-available") {
+        const output = part.output as
+          | {
+              url: string;
+              success: boolean;
+              title: string;
+              content: string;
+              error?: string;
+            }
+          | undefined;
+
+        if (output) {
+          return (
+            <Tool
+              className="w-[min(100%,500px)]"
+              defaultOpen={true}
+              key={toolCallId}
+            >
+              <ToolHeader
+                state={state}
+                title={output.title ? `Fetched: ${output.title}` : undefined}
+                type="tool-fetchUrl"
+              />
+              <ToolContent>
+                <ToolOutput
+                  errorText={output.error}
+                  output={
+                    output.content ? (
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground">
+                          <a
+                            className="underline"
+                            href={output.url}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                          >
+                            {output.url}
+                          </a>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed">
+                          {output.content}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">
+                        No content retrieved from{" "}
+                        <a
+                          className="underline"
+                          href={output.url}
+                          rel="noopener noreferrer"
+                          target="_blank"
+                        >
+                          {output.url}
+                        </a>
+                      </div>
+                    )
+                  }
+                />
+              </ToolContent>
+            </Tool>
+          );
+        }
+      }
+
+      return null;
+    }
+
     if (type === "tool-searchWeb") {
       const { toolCallId, state } = part;
 

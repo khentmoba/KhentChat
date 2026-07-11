@@ -21,6 +21,7 @@ import {
 } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { fetchUrlTool } from "@/lib/ai/tools/fetch-url";
 import { searchWebTool } from "@/lib/ai/tools/web-search";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
@@ -285,6 +286,7 @@ export async function POST(request: Request) {
             isEnabled: isProductionEnvironment,
           },
           tools: {
+            fetchUrl: fetchUrlTool,
             searchWeb: searchWebTool,
           },
         });
