@@ -4,6 +4,8 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { cn } from "@/lib/utils";
 import { CheckIcon, CopyIcon, CodeIcon, ChevronDownIcon } from "lucide-react";
 import { createHighlighter, type BundledLanguage, type ThemedToken } from "shiki";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
 // ============================================================================
 // Inline Tokens
@@ -14,13 +16,13 @@ type InlineToken =
   | { type: "bold"; content: string }
   | { type: "italic"; content: string }
   | { type: "code"; content: string }
-  | { type: "math"; content: string }
+  | { type: "math"; content: string; display?: boolean }
   | { type: "link"; content: string; href: string };
 
 function tokenizeInline(text: string): InlineToken[] {
   const tokens: InlineToken[] = [];
-  // Match: inline code, bold, LaTeX math ($...$), italic, links
-  const regex = /(`[^`]+`|\*\*[^*]+\*\*|\$[^$]+\$|_(?!_)[^_]+_(?!_)|\[([^\]]+)\]\(([^)]+)\))/g;
+  // Match: inline code, bold, display math ($$...$$), inline LaTeX math ($...$), italic, links
+  const regex = /(`[^`]+`|\*\*[^*]+\*\*|\$\$[^$]+\$\$|\$[^$]+\$|_(?!_)[^_]+_(?!_)|\[([^\]]+)\]\(([^)]+)\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -33,6 +35,8 @@ function tokenizeInline(text: string): InlineToken[] {
       tokens.push({ type: "code", content: raw.slice(1, -1) });
     } else if (raw.startsWith("**")) {
       tokens.push({ type: "bold", content: raw.slice(2, -2) });
+    } else if (raw.startsWith("$$")) {
+      tokens.push({ type: "math", content: raw.slice(2, -2), display: true });
     } else if (raw.startsWith("$")) {
       tokens.push({ type: "math", content: raw.slice(1, -1) });
     } else if (raw.startsWith("[")) {
@@ -50,38 +54,27 @@ function tokenizeInline(text: string): InlineToken[] {
   return tokens.length > 0 ? tokens : [{ type: "text", content: text }];
 }
 
-// Simple LaTeX to Unicodeish renderer for common math symbols
-function renderMath(tex: string): string {
-  return tex
-    .replace(/\\log/g, "log")
-    .replace(/\\times/g, "×")
-    .replace(/\\cdot/g, "·")
-    .replace(/\\leq/g, "≤")
-    .replace(/\\geq/g, "≥")
-    .replace(/\\neq/g, "≠")
-    .replace(/\\approx/g, "≈")
-    .replace(/\\infty/g, "∞")
-    .replace(/\\sum/g, "Σ")
-    .replace(/\\prod/g, "Π")
-    .replace(/\\sqrt/g, "√")
-    .replace(/\\alpha/g, "α")
-    .replace(/\\beta/g, "β")
-    .replace(/\\gamma/g, "γ")
-    .replace(/\\delta/g, "δ")
-    .replace(/\\theta/g, "θ")
-    .replace(/\\lambda/g, "λ")
-    .replace(/\\mu/g, "μ")
-    .replace(/\\sigma/g, "σ")
-    .replace(/\\pi/g, "π")
-    .replace(/\\rightarrow/g, "→")
-    .replace(/\\leftarrow/g, "←")
-    .replace(/\\Rightarrow/g, "⇒")
-    .replace(/\\Leftarrow/g, "⇐")
-    .replace(/\\mathbb\{([A-Z])\}/g, "$1")
-    .replace(/\\mathcal\{([A-Z])\}/g, "$1")
-    .replace(/\{([^}]+)\}/g, "$1")
-    .replace(/\\([a-zA-Z]+)/g, "$1")
-    .trim();
+// KaTeX math rendering
+function renderInlineMath(tex: string): string {
+  try {
+    return katex.renderToString(tex, {
+      throwOnError: false,
+      displayMode: false,
+    });
+  } catch {
+    return tex;
+  }
+}
+
+function renderDisplayMath(tex: string): string {
+  try {
+    return katex.renderToString(tex, {
+      throwOnError: false,
+      displayMode: true,
+    });
+  } catch {
+    return tex;
+  }
 }
 
 function InlineText({ text }: { text: string }) {
@@ -113,12 +106,17 @@ function InlineText({ text }: { text: string }) {
             );
           case "math":
             return (
-              <code
-                className="rounded-md bg-muted/40 px-1.5 py-0.5 font-mono text-[0.85em] text-foreground/80 ring-1 ring-border/20 italic"
+              <span
+                className={cn(
+                  token.display && "katex-display-standalone"
+                )}
+                dangerouslySetInnerHTML={{
+                  __html: token.display
+                    ? renderDisplayMath(token.content)
+                    : renderInlineMath(token.content),
+                }}
                 key={i}
-              >
-                {renderMath(token.content)}
-              </code>
+              />
             );
           case "link":
             return (
@@ -324,7 +322,7 @@ function CodeBlockDedicated({
 // ============================================================================
 
 interface Block {
-  type: "paragraph" | "heading" | "ul" | "ol" | "code-block" | "blockquote" | "hr";
+  type: "paragraph" | "heading" | "ul" | "ol" | "code-block" | "blockquote" | "hr" | "math-block";
   level?: number;
   items?: string[];
   content?: string;
@@ -372,6 +370,25 @@ function parseBlocks(text: string): Block[] {
     if (/^(\*{3,}|-{3,}|_{3,})\s*$/.test(line.trim())) {
       blocks.push({ type: "hr" });
       i++;
+      continue;
+    }
+
+    // Math block ($$...$$ display math)
+    if (line.trimStart().startsWith("$$")) {
+      const mathLines: string[] = [];
+      i++;
+      while (i < lines.length) {
+        if (lines[i].trimStart().startsWith("$$")) {
+          i++;
+          break;
+        }
+        mathLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({
+        type: "math-block",
+        content: mathLines.join("\n"),
+      });
       continue;
     }
 
@@ -445,6 +462,7 @@ function parseBlocks(text: string): Block[] {
       i < lines.length &&
       lines[i].trim() !== "" &&
       !lines[i].trimStart().startsWith("```") &&
+      !lines[i].trimStart().startsWith("$$") &&
       !/^#{1,6}\s/.test(lines[i]) &&
       !lines[i].startsWith("> ") &&
       !/^[\s]*[-*+]\s+/.test(lines[i]) &&
@@ -518,6 +536,15 @@ function MarkdownBlock({ block }: { block: Block }) {
       );
     case "hr":
       return <hr className="my-6 border-border/20" />;
+    case "math-block":
+      return (
+        <div
+          className="katex-display-standalone my-4 overflow-x-auto py-2 text-center"
+          dangerouslySetInnerHTML={{
+            __html: renderDisplayMath(block.content ?? ""),
+          }}
+        />
+      );
     default:
       return (
         <p className="my-1.5 text-foreground leading-relaxed">

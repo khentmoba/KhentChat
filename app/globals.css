@@ -495,3 +495,35 @@ textarea:focus-visible {
 [data-testid="artifact"] {
   isolation: isolate;
 }
+
+/* KaTeX math rendering overrides */
+.katex-display-standalone {
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: center;
+}
+
+.katex-display-standalone .katex-display {
+  margin: 0;
+}
+
+.katex-display-standalone .katex {
+  font-size: 1.1em;
+}
+
+/* Dark mode KaTeX overrides for better contrast */
+.dark .katex .mord,
+.dark .katex .mbin,
+.dark .katex .mrel,
+.dark .katex .mopen,
+.dark .katex .mclose,
+.dark .katex .mpunct,
+.dark .katex .minner,
+.dark .katex .mbase,
+.dark .katex .mop {
+  color: var(--foreground);
+}
+
+.dark .katex .katex-html .newline {
+  height: 0.5em;
+}
