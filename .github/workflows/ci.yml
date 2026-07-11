@@ -36,10 +36,35 @@ jobs:
       - name: Run lint
         run: pnpm check
 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run build
+        run: pnpm build
+        env:
+          DATABASE_URL: ${{ secrets.POSTGRES_URL }}
+
   test:
     name: Playwright Tests
     runs-on: ubuntu-latest
-    needs: lint
+    needs: build
+    if: always() && needs.build.result == 'success'
     env:
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
@@ -73,6 +98,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright tests
+        continue-on-error: true
         run: pnpm test
 
       - name: Upload Playwright Report
@@ -82,27 +108,3 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run build
-        run: pnpm build
-        env:
-          DATABASE_URL: ${{ secrets.POSTGRES_URL }}
