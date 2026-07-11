@@ -4,6 +4,8 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { cn } from "@/lib/utils";
 import { CheckIcon, CopyIcon, CodeIcon, ChevronDownIcon } from "lucide-react";
 import { createHighlighter, type BundledLanguage, type ThemedToken } from "shiki";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
 // ============================================================================
 // Inline Tokens
@@ -52,167 +54,16 @@ function tokenizeInline(text: string): InlineToken[] {
   return tokens.length > 0 ? tokens : [{ type: "text", content: text }];
 }
 
-// LaTeX to Unicode renderer — handles common math notation
-function renderMath(tex: string): string {
-  let result = tex;
-
-  // Fractions: \frac{a}{b} → a/b
-  result = result.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "($1)/($2)");
-
-  // Square roots: \sqrt{x} → √(x), \sqrt[n]{x} → ⁿ√(x)
-  result = result.replace(/\\sqrt\[([^\]]+)\]\{([^}]+)\}/g, "$1√($2)");
-  result = result.replace(/\\sqrt\{([^}]+)\}/g, "√($1)");
-
-  // Integrals with limits: \int_{a}^{b} → ∫ₐᵇ
-  result = result.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}/g, "∫$1$2");
-  result = result.replace(/\\int_\{([^}]+)\}\^(\S)/g, "∫$1$2");
-  result = result.replace(/\\int\^\{([^}]+)\}/g, "∫^$1");
-  result = result.replace(/\\int_\{([^}]+)\}/g, "∫_$1");
-  result = result.replace(/\\int/g, "∫");
-
-  // Sums with limits: \sum_{a}^{b} → Σₐᵇ
-  result = result.replace(/\\sum_\{([^}]+)\}\^\{([^}]+)\}/g, "Σ$1$2");
-  result = result.replace(/\\sum_\{([^}]+)\}\^(\S)/g, "Σ$1$2");
-  result = result.replace(/\\sum\^\{([^}]+)\}/g, "Σ^$1");
-  result = result.replace(/\\sum_\{([^}]+)\}/g, "Σ_$1");
-  result = result.replace(/\\sum/g, "Σ");
-
-  // Products: \prod_{a}^{b} → Πₐᵇ
-  result = result.replace(/\\prod_\{([^}]+)\}\^\{([^}]+)\}/g, "Π$1$2");
-  result = result.replace(/\\prod/g, "Π");
-
-  // Limits: \lim_{x→a} → lim(x→a)
-  result = result.replace(/\\lim_\{([^}]+)\}/g, "lim($1)");
-  result = result.replace(/\\lim/g, "lim");
-
-  // Subscripts: x_{n} → xₙ (single char)
-  result = result.replace(/([a-zA-Z0-9])_\{([^}]{1,3})\}/g, "$1₍$2₎");
-  result = result.replace(/([a-zA-Z0-9])_(\w)/g, "$1_$2");
-
-  // Superscripts: x^{n} → xⁿ (single char)
-  result = result.replace(/([a-zA-Z0-9])\^\{([^}]{1,3})\}/g, "$1⁽$2⁾");
-  result = result.replace(/([a-zA-Z0-9])\^(\w)/g, "$1^$2");
-
-  // Operators
-  result = result.replace(/\\sin/g, "sin");
-  result = result.replace(/\\cos/g, "cos");
-  result = result.replace(/\\tan/g, "tan");
-  result = result.replace(/\\sec/g, "sec");
-  result = result.replace(/\\csc/g, "csc");
-  result = result.replace(/\\cot/g, "cot");
-  result = result.replace(/\\arcsin/g, "arcsin");
-  result = result.replace(/\\arccos/g, "arccos");
-  result = result.replace(/\\arctan/g, "arctan");
-  result = result.replace(/\\ln/g, "ln");
-  result = result.replace(/\\log/g, "log");
-  result = result.replace(/\\exp/g, "exp");
-  result = result.replace(/\\det/g, "det");
-  result = result.replace(/\\gcd/g, "gcd");
-  result = result.replace(/\\max/g, "max");
-  result = result.replace(/\\min/g, "min");
-  result = result.replace(/\\sup/g, "sup");
-  result = result.replace(/\\inf/g, "inf");
-  result = result.replace(/\\mod/g, "mod");
-  result = result.replace(/\\partial/g, "∂");
-  result = result.replace(/\\nabla/g, "∇");
-  result = result.replace(/\\forall/g, "∀");
-  result = result.replace(/\\exists/g, "∃");
-  result = result.replace(/\\in/g, "∈");
-  result = result.replace(/\\notin/g, "∉");
-  result = result.replace(/\\subset/g, "⊂");
-  result = result.replace(/\\supset/g, "⊃");
-  result = result.replace(/\\subseteq/g, "⊆");
-  result = result.replace(/\\supseteq/g, "⊇");
-  result = result.replace(/\\cup/g, "∪");
-  result = result.replace(/\\cap/g, "∩");
-  result = result.replace(/\\emptyset/g, "∅");
-  result = result.replace(/\\pm/g, "±");
-  result = result.replace(/\\mp/g, "∓");
-  result = result.replace(/\\times/g, "×");
-  result = result.replace(/\\cdot/g, "·");
-  result = result.replace(/\\div/g, "÷");
-  result = result.replace(/\\leq/g, "≤");
-  result = result.replace(/\\geq/g, "≥");
-  result = result.replace(/\\neq/g, "≠");
-  result = result.replace(/\\approx/g, "≈");
-  result = result.replace(/\\equiv/g, "≡");
-  result = result.replace(/\\sim/g, "∼");
-  result = result.replace(/\\propto/g, "∝");
-  result = result.replace(/\\infty/g, "∞");
-  result = result.replace(/\\rightarrow/g, "→");
-  result = result.replace(/\\leftarrow/g, "←");
-  result = result.replace(/\\Rightarrow/g, "⇒");
-  result = result.replace(/\\Leftarrow/g, "⇐");
-  result = result.replace(/\\leftrightarrow/g, "↔");
-  result = result.replace(/\\Leftrightarrow/g, "⇔");
-  result = result.replace(/\\uparrow/g, "↑");
-  result = result.replace(/\\downarrow/g, "↓");
-
-  // Greek letters (lowercase)
-  result = result.replace(/\\alpha/g, "α");
-  result = result.replace(/\\beta/g, "β");
-  result = result.replace(/\\gamma/g, "γ");
-  result = result.replace(/\\delta/g, "δ");
-  result = result.replace(/\\epsilon/g, "ε");
-  result = result.replace(/\\varepsilon/g, "ε");
-  result = result.replace(/\\zeta/g, "ζ");
-  result = result.replace(/\\eta/g, "η");
-  result = result.replace(/\\theta/g, "θ");
-  result = result.replace(/\\vartheta/g, "ϑ");
-  result = result.replace(/\\iota/g, "ι");
-  result = result.replace(/\\kappa/g, "κ");
-  result = result.replace(/\\lambda/g, "λ");
-  result = result.replace(/\\mu/g, "μ");
-  result = result.replace(/\\nu/g, "ν");
-  result = result.replace(/\\xi/g, "ξ");
-  result = result.replace(/\\pi/g, "π");
-  result = result.replace(/\\varpi/g, "ϖ");
-  result = result.replace(/\\rho/g, "ρ");
-  result = result.replace(/\\varrho/g, "ϱ");
-  result = result.replace(/\\sigma/g, "σ");
-  result = result.replace(/\\varsigma/g, "ς");
-  result = result.replace(/\\tau/g, "τ");
-  result = result.replace(/\\upsilon/g, "υ");
-  result = result.replace(/\\phi/g, "φ");
-  result = result.replace(/\\varphi/g, "φ");
-  result = result.replace(/\\chi/g, "χ");
-  result = result.replace(/\\psi/g, "ψ");
-  result = result.replace(/\\omega/g, "ω");
-
-  // Greek letters (uppercase)
-  result = result.replace(/\\Gamma/g, "Γ");
-  result = result.replace(/\\Delta/g, "Δ");
-  result = result.replace(/\\Theta/g, "Θ");
-  result = result.replace(/\\Lambda/g, "Λ");
-  result = result.replace(/\\Xi/g, "Ξ");
-  result = result.replace(/\\Pi/g, "Π");
-  result = result.replace(/\\Sigma/g, "Σ");
-  result = result.replace(/\\Upsilon/g, "Υ");
-  result = result.replace(/\\Phi/g, "Φ");
-  result = result.replace(/\\Psi/g, "Ψ");
-  result = result.replace(/\\Omega/g, "Ω");
-
-  // Mathbb / mathcal (strip command, keep letter)
-  result = result.replace(/\\mathbb\{([A-Z])\}/g, "$1");
-  result = result.replace(/\\mathcal\{([A-Z])\}/g, "$1");
-  result = result.replace(/\\mathbf\{([^}]+)\}/g, "$1");
-  result = result.replace(/\\text\{([^}]+)\}/g, "$1");
-  result = result.replace(/\\mathrm\{([^}]+)\}/g, "$1");
-
-  // Spacing commands
-  result = result.replace(/\\,/g, " ");
-  result = result.replace(/\\;/g, " ");
-  result = result.replace(/\\!/g, "");
-  result = result.replace(/\\quad/g, "  ");
-  result = result.replace(/\\qquad/g, "    ");
-
-  // Braces
-  result = result.replace(/\{([^}]+)\}/g, "$1");
-
-  // Remaining backslash commands → strip backslash
-  result = result.replace(/\\([a-zA-Z]+)/g, "$1");
-
-  return result.trim();
+// KaTeX math rendering
+function renderMath(tex: string, displayMode = false): string {
+  try {
+    return katex.renderToString(tex, {
+      throwOnError: false,
+      displayMode,
+    });
+  } catch {
+    return tex;
+  }
 }
 
 function InlineText({ text }: { text: string }) {
@@ -224,13 +75,13 @@ function InlineText({ text }: { text: string }) {
           case "bold":
             return (
               <strong className="font-semibold text-foreground" key={i}>
-                {token.content}
+                <InlineText text={token.content} />
               </strong>
             );
           case "italic":
             return (
               <em className="italic text-foreground/80" key={i}>
-                {token.content}
+                <InlineText text={token.content} />
               </em>
             );
           case "code":
@@ -242,20 +93,18 @@ function InlineText({ text }: { text: string }) {
                 {token.content}
               </code>
             );
-          case "math":
+          case "math": {
+            const html = renderMath(token.content, token.display ?? false);
             return (
-              <code
+              <span
                 className={cn(
-                  "rounded-md px-1.5 py-0.5 font-mono text-[0.85em] ring-1 ring-border/20",
-                  token.display
-                    ? "mx-auto my-2 block w-fit bg-muted/30 text-sm"
-                    : "bg-muted/40 italic text-foreground/80"
+                  token.display && "block text-center my-3"
                 )}
+                dangerouslySetInnerHTML={{ __html: html }}
                 key={i}
-              >
-                {renderMath(token.content)}
-              </code>
+              />
             );
+          }
           case "link":
             return (
               <a
@@ -460,7 +309,7 @@ function CodeBlockDedicated({
 // ============================================================================
 
 interface Block {
-  type: "paragraph" | "heading" | "ul" | "ol" | "code-block" | "blockquote" | "hr" | "math-block";
+  type: "paragraph" | "heading" | "ul" | "ol" | "code-block" | "blockquote" | "hr";
   level?: number;
   items?: string[];
   content?: string;
@@ -508,25 +357,6 @@ function parseBlocks(text: string): Block[] {
     if (/^(\*{3,}|-{3,}|_{3,})\s*$/.test(line.trim())) {
       blocks.push({ type: "hr" });
       i++;
-      continue;
-    }
-
-    // Math block ($$...$$ display math)
-    if (line.trimStart().startsWith("$$")) {
-      const mathLines: string[] = [];
-      i++;
-      while (i < lines.length) {
-        if (lines[i].trimStart().startsWith("$$")) {
-          i++;
-          break;
-        }
-        mathLines.push(lines[i]);
-        i++;
-      }
-      blocks.push({
-        type: "math-block",
-        content: mathLines.join("\n"),
-      });
       continue;
     }
 
@@ -600,7 +430,6 @@ function parseBlocks(text: string): Block[] {
       i < lines.length &&
       lines[i].trim() !== "" &&
       !lines[i].trimStart().startsWith("```") &&
-      !lines[i].trimStart().startsWith("$$") &&
       !/^#{1,6}\s/.test(lines[i]) &&
       !lines[i].startsWith("> ") &&
       !/^[\s]*[-*+]\s+/.test(lines[i]) &&
@@ -674,12 +503,6 @@ function MarkdownBlock({ block }: { block: Block }) {
       );
     case "hr":
       return <hr className="my-6 border-border/20" />;
-    case "math-block":
-      return (
-        <div className="my-4 rounded-lg bg-muted/30 px-6 py-4 text-center font-mono text-sm text-foreground/80 ring-1 ring-border/20">
-          {renderMath(block.content ?? "")}
-        </div>
-      );
     default:
       return (
         <p className="my-1.5 text-foreground leading-relaxed">

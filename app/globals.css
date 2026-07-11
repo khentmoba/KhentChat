@@ -495,3 +495,14 @@ textarea:focus-visible {
 [data-testid="artifact"] {
   isolation: isolate;
 }
+
+/* KaTeX theme integration — inherit foreground color */
+.katex {
+  color: inherit;
+}
+
+/* Override KaTeX error color (was showing red) */
+.katex-error {
+  font-size: 0.85em;
+  color: var(--foreground) !important;
+}
