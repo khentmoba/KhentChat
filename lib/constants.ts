@@ -14,7 +14,7 @@ export const DUMMY_PASSWORD = generateDummyPassword();
 
 export const suggestions = [
   "What are the advantages of using Next.js?",
-  "Write code to demonstrate Dijkstra's algorithm",
+  "Write code to demonstrate Dijkstra's algorithm with a priority queue",
   "Help me write an essay about Silicon Valley",
   "What is the weather in San Francisco?",
 ];

@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
+import { MarkdownRenderer } from "../ai-elements/markdown-renderer";
 import { MessageContent, MessageResponse } from "../ai-elements/message";
 import { Shimmer } from "../ai-elements/shimmer";
 import {
@@ -22,10 +23,24 @@ function WaitingText() {
   const waitingText = waitingStatus?.message ?? "Waiting...";
 
   return (
-    <div className="flex min-h-[calc(13px*1.65)] min-w-0 items-center text-[13px] leading-[1.65]">
+    <div className="flex min-h-[calc(13px*1.65)] min-w-0 items-center gap-2 text-[13px] leading-[1.65]">
+      <div className="flex items-center gap-1">
+        <span
+          className="inline-block size-1.5 rounded-full bg-foreground/40 thinking-dot"
+          style={{ animationDelay: "0ms" }}
+        />
+        <span
+          className="inline-block size-1.5 rounded-full bg-foreground/40 thinking-dot"
+          style={{ animationDelay: "200ms" }}
+        />
+        <span
+          className="inline-block size-1.5 rounded-full bg-foreground/40 thinking-dot"
+          style={{ animationDelay: "400ms" }}
+        />
+      </div>
       <Shimmer
         as="span"
-        className="font-medium whitespace-normal break-words"
+        className="font-medium whitespace-normal break-words text-muted-foreground"
         duration={1}
       >
         {waitingText}
@@ -157,16 +172,21 @@ const PurePreviewMessage = ({
         mergedReasoning.rendered = true;
         return (
           <details
-            className="mt-2 rounded-lg border border-border/20 bg-muted/30"
+            className="mt-2 overflow-hidden rounded-xl border border-border/20 bg-gradient-to-br from-muted/20 to-muted/40"
             key={key}
             open={isLoading || mergedReasoning.isStreaming}
           >
-            <summary className="cursor-pointer px-3 py-2 text-[13px] text-muted-foreground">
-              {isLoading || mergedReasoning.isStreaming
-                ? "Thinking..."
-                : "Thought for a moment"}
+            <summary className="cursor-pointer px-4 py-2.5 text-[12px] font-medium text-muted-foreground/80 transition-colors hover:text-muted-foreground">
+              {isLoading || mergedReasoning.isStreaming ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block size-1.5 rounded-full bg-blue-400/60 thinking-dot" />
+                  Thinking...
+                </span>
+              ) : (
+                "Thought for a moment"
+              )}
             </summary>
-            <div className="max-h-[200px] overflow-y-auto px-3 pb-2 text-[11px] leading-relaxed text-muted-foreground/60">
+            <div className="max-h-[200px] overflow-y-auto border-t border-border/10 px-4 pb-3 pt-2 text-[12px] leading-relaxed text-muted-foreground/50">
               {mergedReasoning.text}
             </div>
           </details>
@@ -176,12 +196,20 @@ const PurePreviewMessage = ({
     }
 
     if (type === "text") {
+      if (isAssistant) {
+        return (
+          <div
+            className="min-w-0 flex-1"
+            data-testid="message-content"
+            key={key}
+          >
+            <MarkdownRenderer content={sanitizeText(part.text)} />
+          </div>
+        );
+      }
       return (
         <MessageContent
-          className={cn("text-[13px] leading-[1.65]", {
-            "w-fit max-w-[min(80%,56ch)] overflow-hidden break-words rounded-2xl rounded-br-lg border border-border/30 bg-gradient-to-br from-secondary to-muted px-3.5 py-2 shadow-[var(--shadow-card)]":
-              message.role === "user",
-          })}
+          className="w-fit max-w-[min(80%,56ch)] overflow-hidden break-words rounded-2xl rounded-br-lg border border-border/30 bg-gradient-to-br from-secondary to-muted px-3.5 py-2 text-[13px] leading-[1.65] shadow-[var(--shadow-card)]"
           data-testid="message-content"
           key={key}
         >
@@ -376,7 +404,9 @@ const PurePreviewMessage = ({
     <div
       className={cn(
         "group/message w-full",
-        !isAssistant && "animate-[fade-up_0.25s_cubic-bezier(0.22,1,0.36,1)]"
+        isAssistant
+          ? "animate-[fade-in_0.2s_ease_both]"
+          : "animate-[fade-up_0.25s_cubic-bezier(0.22,1,0.36,1)]"
       )}
       data-role={message.role}
       data-testid={`message-${message.role}`}
@@ -388,7 +418,7 @@ const PurePreviewMessage = ({
       >
         {isAssistant && (
           <div className="flex h-[calc(13px*1.65)] shrink-0 items-center">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground ring-1 ring-border/50">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-muted/80 to-muted text-muted-foreground ring-1 ring-border/40 shadow-sm">
               <SparklesIcon size={13} />
             </div>
           </div>
@@ -407,7 +437,7 @@ export const PreviewMessage = PurePreviewMessage;
 
 export const ThinkingMessage = () => (
   <div
-    className="group/message w-full"
+    className="group/message w-full animate-[fade-in_0.2s_ease_both]"
     data-role="assistant"
     data-testid="message-assistant-loading"
   >

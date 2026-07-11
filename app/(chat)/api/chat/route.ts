@@ -43,7 +43,7 @@ import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
 export const maxDuration = 60;
 
-const HEALTH_CHECK_DELAY_MS = 9000;
+const HEALTH_CHECK_DELAY_MS = 5000;
 
 function isModelStreamActivity(chunk: { type: string }) {
   return !["start", "start-step", "finish-step", "finish", "raw"].includes(
@@ -85,14 +85,16 @@ export async function POST(request: Request) {
       ? selectedChatModel
       : DEFAULT_CHAT_MODEL;
 
-    await checkIpRateLimit(ipAddress(request));
-
     const userType: UserType = session.user.type;
 
-    const messageCount = await getMessageCountByUserId({
-      differenceInHours: 1,
-      id: session.user.id,
-    });
+    const [_rateLimitResult, messageCount, chat] = await Promise.all([
+      checkIpRateLimit(ipAddress(request)),
+      getMessageCountByUserId({
+        differenceInHours: 1,
+        id: session.user.id,
+      }),
+      getChatById({ id }),
+    ]);
 
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerHour) {
       return new ChatbotError("rate_limit:chat").toResponse();
@@ -100,7 +102,6 @@ export async function POST(request: Request) {
 
     const isToolApprovalFlow = Boolean(messages);
 
-    const chat = await getChatById({ id });
     let messagesFromDb: DBMessage[] = [];
     let titlePromise: Promise<string> | null = null;
 
@@ -182,11 +183,13 @@ export async function POST(request: Request) {
     }
 
     const modelConfig = chatModels.find((m) => m.id === chatModel);
-    const modelCapabilities = await getCapabilities();
+
+    const [modelCapabilities, modelMessages] = await Promise.all([
+      getCapabilities(),
+      convertToModelMessages(uiMessages),
+    ]);
     const capabilities = modelCapabilities[chatModel];
     const isReasoningModel = capabilities?.reasoning === true;
-
-    const modelMessages = await convertToModelMessages(uiMessages);
 
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {

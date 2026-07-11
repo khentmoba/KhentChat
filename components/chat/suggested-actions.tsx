@@ -54,7 +54,7 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
           }}
         >
           <button
-            className="h-auto w-full whitespace-nowrap rounded-xl border border-border/50 bg-card/30 px-4 py-3 text-left text-[12px] leading-relaxed text-muted-foreground transition-all duration-200 sm:whitespace-normal sm:p-4 sm:text-[13px] hover:-translate-y-0.5 hover:bg-card/60 hover:text-foreground hover:shadow-[var(--shadow-card)]"
+            className="h-auto w-full whitespace-nowrap rounded-xl border border-border/40 bg-card/50 px-4 py-3.5 text-left text-[12px] leading-relaxed text-muted-foreground/80 transition-all duration-200 sm:whitespace-normal sm:p-4 sm:text-[13px] hover:border-border/60 hover:bg-card/80 hover:text-foreground hover:shadow-[var(--shadow-card)]"
             // biome-ignore lint/performance/noJsxPropsBind: stable callback needed per item
             onClick={() => handleSuggestionClick(suggestedAction)}
             type="button"
