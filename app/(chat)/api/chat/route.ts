@@ -8,7 +8,6 @@ import {
   streamText,
   toUIMessageStream,
 } from "ai";
-import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
@@ -22,11 +21,6 @@ import {
 } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
-import { createDocument } from "@/lib/ai/tools/create-document";
-import { editDocument } from "@/lib/ai/tools/edit-document";
-import { getWeather } from "@/lib/ai/tools/get-weather";
-import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
-import { updateDocument } from "@/lib/ai/tools/update-document";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -81,14 +75,7 @@ export async function POST(request: Request) {
     const { id, message, messages, selectedChatModel, selectedVisibilityType } =
       requestBody;
 
-    const [botIdResult, session] = await Promise.all([
-      checkBotId().catch(() => null),
-      auth(),
-    ]);
-
-    if (botIdResult?.isBot) {
-      return new ChatbotError("forbidden:api").toResponse();
-    }
+    const session = await auth();
 
     if (!session?.user) {
       return new ChatbotError("unauthorized:chat").toResponse();
@@ -267,17 +254,7 @@ export async function POST(request: Request) {
         };
 
         const result = streamText({
-          activeTools:
-            isReasoningModel && !supportsTools
-              ? []
-              : [
-                  "getWeather",
-                  "createDocument",
-                  "editDocument",
-                  "updateDocument",
-                  "requestSuggestions",
-                ],
-          instructions: systemPrompt({ requestHints, supportsTools }),
+          instructions: systemPrompt({ requestHints }),
           messages: modelMessages,
           model: getLanguageModel(chatModel),
           onAbort() {
@@ -307,25 +284,7 @@ export async function POST(request: Request) {
             functionId: "stream-text",
             isEnabled: isProductionEnvironment,
           },
-          tools: {
-            createDocument: createDocument({
-              dataStream,
-              modelId: chatModel,
-              session,
-            }),
-            editDocument: editDocument({ dataStream, session }),
-            getWeather,
-            requestSuggestions: requestSuggestions({
-              dataStream,
-              modelId: chatModel,
-              session,
-            }),
-            updateDocument: updateDocument({
-              dataStream,
-              modelId: chatModel,
-              session,
-            }),
-          },
+          tools: {},
         });
 
         dataStream.merge(
