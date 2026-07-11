@@ -1,7 +1,6 @@
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { SparklesIcon, VercelIcon } from "@/components/chat/icons";
-import { Preview } from "@/components/chat/preview";
 
 export default function AuthLayout({
   children,
@@ -33,9 +32,6 @@ export default function AuthLayout({
           Powered by
           <VercelIcon size={14} />
           <span className="font-medium text-muted-foreground">AI Gateway</span>
-        </div>
-        <div className="flex-1 pt-4">
-          <Preview />
         </div>
       </div>
     </div>

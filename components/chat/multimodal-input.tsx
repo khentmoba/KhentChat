@@ -55,14 +55,24 @@ import {
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { PaperclipIcon, StopIcon } from "./icons";
-import { PreviewAttachment } from "./preview-attachment";
-import {
-  type SlashCommand,
-  SlashCommandMenu,
-  slashCommands,
-} from "./slash-commands";
 import { SuggestedActions } from "./suggested-actions";
 import type { VisibilityType } from "./visibility-selector";
+
+type SlashCommand = {
+  name: string;
+  description: string;
+  action: string;
+};
+
+const slashCommands: SlashCommand[] = [
+  { action: "new", description: "Start a new chat", name: "new" },
+  { action: "clear", description: "Clear current messages", name: "clear" },
+  { action: "rename", description: "Rename this chat", name: "rename" },
+  { action: "model", description: "Switch model", name: "model" },
+  { action: "theme", description: "Toggle theme", name: "theme" },
+  { action: "delete", description: "Delete this chat", name: "delete" },
+  { action: "purge", description: "Delete all chats", name: "purge" },
+];
 
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365;
@@ -387,10 +397,6 @@ function PureMultimodalInput({
     [onCancelEdit]
   );
 
-  const handleSlashClose = useCallback(() => {
-    setSlashOpen(false);
-  }, []);
-
   const handlePromptSubmit = useCallback(() => {
     if (input.startsWith("/")) {
       const query = input.slice(1).trim();
@@ -492,12 +498,26 @@ function PureMultimodalInput({
 
       <div className="relative">
         {slashOpen ? (
-          <SlashCommandMenu
-            onClose={handleSlashClose}
-            onSelect={handleSlashSelect}
-            query={slashQuery}
-            selectedIndex={slashIndex}
-          />
+          <div className="absolute bottom-full left-0 right-0 z-50 mb-2 rounded-lg border border-border/50 bg-background p-1 shadow-lg">
+            {slashCommands
+              .filter((cmd) => cmd.name.startsWith(slashQuery.toLowerCase()))
+              .map((cmd, i) => (
+                <button
+                  className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                    i === slashIndex ? "bg-muted" : ""
+                  }`}
+                  key={cmd.name}
+                  // biome-ignore lint/performance/noJsxPropsBind: stable callback needed per item
+                  onClick={() => handleSlashSelect(cmd)}
+                  type="button"
+                >
+                  <span className="font-medium">/{cmd.name}</span>
+                  <span className="text-muted-foreground">
+                    {cmd.description}
+                  </span>
+                </button>
+              ))}
+          </div>
         ) : null}
       </div>
 
@@ -520,15 +540,12 @@ function PureMultimodalInput({
             ))}
 
             {uploadQueue.map((filename) => (
-              <PreviewAttachment
-                attachment={{
-                  contentType: "",
-                  name: filename,
-                  url: "",
-                }}
-                isUploading={true}
+              <div
+                className="flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground"
                 key={filename}
-              />
+              >
+                {filename}
+              </div>
             ))}
           </div>
         )}
@@ -630,7 +647,18 @@ function PureAttachmentPreviewItem({
     }
   }, [attachment.url, fileInputRef, setAttachments]);
 
-  return <PreviewAttachment attachment={attachment} onRemove={handleRemove} />;
+  return (
+    <div className="relative flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground">
+      {attachment.name}
+      <button
+        className="ml-1 text-muted-foreground/50 hover:text-foreground"
+        onClick={handleRemove}
+        type="button"
+      >
+        ×
+      </button>
+    </div>
+  );
 }
 
 const AttachmentPreviewItem = memo(PureAttachmentPreviewItem);

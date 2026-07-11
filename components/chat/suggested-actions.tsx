@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { memo, useCallback } from "react";
 import { suggestions } from "@/lib/constants";
 import type { ChatMessage } from "@/lib/types";
-import { Suggestion } from "../ai-elements/suggestion";
 import type { VisibilityType } from "./visibility-selector";
 
 type SuggestedActionsProps = {
@@ -54,13 +53,14 @@ function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
             ease: [0.22, 1, 0.36, 1],
           }}
         >
-          <Suggestion
+          <button
             className="h-auto w-full whitespace-nowrap rounded-xl border border-border/50 bg-card/30 px-4 py-3 text-left text-[12px] leading-relaxed text-muted-foreground transition-all duration-200 sm:whitespace-normal sm:p-4 sm:text-[13px] hover:-translate-y-0.5 hover:bg-card/60 hover:text-foreground hover:shadow-[var(--shadow-card)]"
-            onClick={handleSuggestionClick}
-            suggestion={suggestedAction}
+            // biome-ignore lint/performance/noJsxPropsBind: stable callback needed per item
+            onClick={() => handleSuggestionClick(suggestedAction)}
+            type="button"
           >
             {suggestedAction}
-          </Suggestion>
+          </button>
         </motion.div>
       ))}
     </div>

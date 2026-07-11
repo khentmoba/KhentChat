@@ -14,13 +14,8 @@ import {
   ToolOutput,
 } from "../ai-elements/tool";
 import { useDataStream } from "./data-stream-provider";
-import { DocumentToolResult } from "./document";
-import { DocumentPreview } from "./document-preview";
 import { SparklesIcon } from "./icons";
 import { MessageActions } from "./message-actions";
-import { MessageReasoning } from "./message-reasoning";
-import { PreviewAttachment } from "./preview-attachment";
-import { Weather } from "./weather";
 
 function WaitingText() {
   const { waitingStatus } = useDataStream();
@@ -129,14 +124,12 @@ const PurePreviewMessage = ({
       data-testid={"message-attachments"}
     >
       {attachmentsFromMessage.map((attachment) => (
-        <PreviewAttachment
-          attachment={{
-            contentType: attachment.mediaType,
-            name: attachment.filename ?? "file",
-            url: attachment.url,
-          }}
+        <div
+          className="flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground"
           key={attachment.url}
-        />
+        >
+          {attachment.filename ?? "file"}
+        </div>
       ))}
     </div>
   );
@@ -163,11 +156,20 @@ const PurePreviewMessage = ({
       if (!mergedReasoning.rendered && mergedReasoning.text) {
         mergedReasoning.rendered = true;
         return (
-          <MessageReasoning
-            isLoading={isLoading || mergedReasoning.isStreaming}
+          <details
+            className="mt-2 rounded-lg border border-border/20 bg-muted/30"
             key={key}
-            reasoning={mergedReasoning.text}
-          />
+            open={isLoading || mergedReasoning.isStreaming}
+          >
+            <summary className="cursor-pointer px-3 py-2 text-[13px] text-muted-foreground">
+              {isLoading || mergedReasoning.isStreaming
+                ? "Thinking..."
+                : "Thought for a moment"}
+            </summary>
+            <div className="max-h-[200px] overflow-y-auto px-3 pb-2 text-[11px] leading-relaxed text-muted-foreground/60">
+              {mergedReasoning.text}
+            </div>
+          </details>
         );
       }
       return null;
@@ -201,7 +203,21 @@ const PurePreviewMessage = ({
       if (state === "output-available") {
         return (
           <div className={widthClass} key={toolCallId}>
-            <Weather weatherAtLocation={part.output} />
+            <Tool className="w-full" defaultOpen={true}>
+              <ToolHeader state="output-available" type="tool-getWeather" />
+              <ToolContent>
+                <ToolOutput
+                  errorText={undefined}
+                  output={
+                    <div className="px-4 py-3 text-sm">
+                      {typeof part.output === "string"
+                        ? part.output
+                        : JSON.stringify(part.output)}
+                    </div>
+                  }
+                />
+              </ToolContent>
+            </Tool>
           </div>
         );
       }
@@ -257,48 +273,50 @@ const PurePreviewMessage = ({
 
     if (type === "tool-createDocument") {
       const { toolCallId } = part;
+      const output = part.output as Record<string, unknown> | undefined;
 
-      if (part.output && "error" in part.output) {
+      if (output && "error" in output) {
         return (
           <div
             className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
             key={toolCallId}
           >
-            Error creating document: {String(part.output.error)}
+            Error creating document: {String(output.error)}
           </div>
         );
       }
 
       return (
-        <DocumentPreview
-          isReadonly={isReadonly}
+        <div
+          className="rounded-lg border border-border/50 bg-muted/30 p-4 text-sm"
           key={toolCallId}
-          result={part.output}
-        />
+        >
+          <div className="font-medium text-foreground">Document Created</div>
+        </div>
       );
     }
 
     if (type === "tool-updateDocument") {
       const { toolCallId } = part;
+      const output = part.output as Record<string, unknown> | undefined;
 
-      if (part.output && "error" in part.output) {
+      if (output && "error" in output) {
         return (
           <div
             className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
             key={toolCallId}
           >
-            Error updating document: {String(part.output.error)}
+            Error updating document: {String(output.error)}
           </div>
         );
       }
 
       return (
-        <div className="relative" key={toolCallId}>
-          <DocumentPreview
-            args={{ ...part.output, isUpdate: true }}
-            isReadonly={isReadonly}
-            result={part.output}
-          />
+        <div
+          className="rounded-lg border border-border/50 bg-muted/30 p-4 text-sm"
+          key={toolCallId}
+        >
+          <div className="font-medium text-foreground">Document Updated</div>
         </div>
       );
     }
@@ -319,17 +337,9 @@ const PurePreviewMessage = ({
               <ToolOutput
                 errorText={undefined}
                 output={
-                  "error" in part.output ? (
-                    <div className="rounded border p-2 text-red-500">
-                      Error: {String(part.output.error)}
-                    </div>
-                  ) : (
-                    <DocumentToolResult
-                      isReadonly={isReadonly}
-                      result={part.output}
-                      type="request-suggestions"
-                    />
-                  )
+                  <div className="px-4 py-3 text-sm">
+                    Suggestions processed successfully.
+                  </div>
                 }
               />
             )}
