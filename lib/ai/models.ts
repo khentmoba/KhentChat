@@ -3,7 +3,7 @@ export const DEFAULT_CHAT_MODEL = "agnes-2.0-flash";
 export const titleModel = {
   description: "Fast model for title generation",
   id: "agnes-2.0-flash",
-  name: "Agnes 2.0 Flash",
+  name: "KhentAI",
   provider: "agnes",
 };
 
@@ -26,7 +26,7 @@ export const chatModels: ChatModel[] = [
     description:
       "Fast and capable model for agent workflows, tool calling, and image understanding",
     id: "agnes-2.0-flash",
-    name: "Agnes 2.0 Flash",
+    name: "KhentAI",
     provider: "agnes",
   },
 ];

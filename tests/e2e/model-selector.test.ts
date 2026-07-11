@@ -22,11 +22,9 @@ test.describe("Model Selector", () => {
     await modelButton.click();
 
     const searchInput = page.getByPlaceholder("Search models...");
-    await searchInput.fill("Agnes");
+    await searchInput.fill("KhentAI");
 
-    await expect(
-      page.getByRole("option", { name: /Agnes 2\.0 Flash/ })
-    ).toBeVisible();
+    await expect(page.getByRole("option", { name: /KhentAI/ })).toBeVisible();
   });
 
   test("can close model selector by clicking outside", async ({ page }) => {
@@ -47,7 +45,7 @@ test.describe("Model Selector", () => {
     const availableModels = page.getByRole("group", { name: "Available" });
     await expect(availableModels).toBeVisible();
     await expect(
-      availableModels.getByRole("option", { name: /Agnes 2\.0 Flash/ })
+      availableModels.getByRole("option", { name: /KhentAI/ })
     ).toBeVisible();
   });
 
@@ -55,9 +53,9 @@ test.describe("Model Selector", () => {
     const modelButton = page.getByTestId("model-selector");
     await modelButton.click();
 
-    await page.getByRole("option", { name: /Agnes 2\.0 Flash/ }).click();
+    await page.getByRole("option", { name: /KhentAI/ }).click();
 
     await expect(page.getByPlaceholder("Search models...")).not.toBeVisible();
-    await expect(modelButton).toContainText("Agnes 2.0 Flash");
+    await expect(modelButton).toContainText("KhentAI");
   });
 });

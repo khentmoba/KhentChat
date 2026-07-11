@@ -104,7 +104,7 @@ export const searchWebTool = tool({
       results,
     };
   },
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("The search query"),
   }),
 });

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-const MODEL_BUTTON_REGEX = /Agnes|Kimi|Codestral|Mistral|DeepSeek|GPT|Grok/i;
+const MODEL_BUTTON_REGEX = /KhentAI|Kimi|Codestral|Mistral|DeepSeek|GPT|Grok/i;
 
 export class ChatPage {
   page: Page;
