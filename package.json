@@ -19,6 +19,7 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.7",
     "@ai-sdk/provider": "^4.0.2",
     "@ai-sdk/react": "4.0.16",
     "@radix-ui/react-use-controllable-state": "^1.2.3",
@@ -27,7 +28,6 @@
     "@vercel/functions": "^3.7.5",
     "ai": "7.0.15",
     "bcrypt-ts": "^8.0.1",
-
     "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",

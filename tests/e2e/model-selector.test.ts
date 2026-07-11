@@ -22,10 +22,10 @@ test.describe("Model Selector", () => {
     await modelButton.click();
 
     const searchInput = page.getByPlaceholder("Search models...");
-    await searchInput.fill("DeepSeek");
+    await searchInput.fill("Agnes");
 
     await expect(
-      page.getByRole("option", { name: /DeepSeek V3\.2/ })
+      page.getByRole("option", { name: /Agnes 2\.0 Flash/ })
     ).toBeVisible();
   });
 
@@ -47,10 +47,7 @@ test.describe("Model Selector", () => {
     const availableModels = page.getByRole("group", { name: "Available" });
     await expect(availableModels).toBeVisible();
     await expect(
-      availableModels.getByRole("option", { name: /DeepSeek V3\.2/ })
-    ).toBeVisible();
-    await expect(
-      availableModels.getByRole("option", { name: /Kimi K2\.5/ })
+      availableModels.getByRole("option", { name: /Agnes 2\.0 Flash/ })
     ).toBeVisible();
   });
 
@@ -58,9 +55,9 @@ test.describe("Model Selector", () => {
     const modelButton = page.getByTestId("model-selector");
     await modelButton.click();
 
-    await page.getByRole("option", { name: /DeepSeek V3\.2/ }).click();
+    await page.getByRole("option", { name: /Agnes 2\.0 Flash/ }).click();
 
     await expect(page.getByPlaceholder("Search models...")).not.toBeVisible();
-    await expect(modelButton).toContainText("DeepSeek V3.2");
+    await expect(modelButton).toContainText("Agnes 2.0 Flash");
   });
 });

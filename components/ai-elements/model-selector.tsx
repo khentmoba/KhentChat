@@ -113,6 +113,7 @@ export type ModelSelectorLogoProps = Omit<
   "src" | "alt"
 > & {
   provider:
+    | "agnes"
     | "moonshotai-cn"
     | "lucidquery"
     | "moonshotai"
