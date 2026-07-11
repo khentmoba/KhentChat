@@ -108,7 +108,8 @@ function InlineText({ text }: { text: string }) {
             return (
               <span
                 className={cn(
-                  token.display && "katex-display-standalone"
+                  "text-foreground",
+                  token.display ? "katex-display-standalone" : "katex-inline"
                 )}
                 dangerouslySetInnerHTML={{
                   __html: token.display
@@ -539,7 +540,7 @@ function MarkdownBlock({ block }: { block: Block }) {
     case "math-block":
       return (
         <div
-          className="katex-display-standalone my-4 overflow-x-auto py-2 text-center"
+          className="katex-display-standalone text-foreground my-4 overflow-x-auto py-2 text-center"
           dangerouslySetInnerHTML={{
             __html: renderDisplayMath(block.content ?? ""),
           }}

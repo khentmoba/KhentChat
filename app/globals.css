@@ -497,9 +497,15 @@ textarea:focus-visible {
 }
 
 /* KaTeX math rendering overrides */
+.katex-inline,
 .katex-display-standalone {
   overflow-x: auto;
   overflow-y: hidden;
+  color: var(--foreground) !important;
+}
+
+.katex-display-standalone {
+  padding: 0.5rem 0;
   text-align: center;
 }
 
@@ -511,19 +517,41 @@ textarea:focus-visible {
   font-size: 1.1em;
 }
 
-/* Dark mode KaTeX overrides for better contrast */
-.dark .katex .mord,
-.dark .katex .mbin,
-.dark .katex .mrel,
-.dark .katex .mopen,
-.dark .katex .mclose,
-.dark .katex .mpunct,
-.dark .katex .minner,
-.dark .katex .mbase,
-.dark .katex .mop {
-  color: var(--foreground);
+/* Force all KaTeX elements to inherit foreground color */
+.katex-inline *,
+.katex-display-standalone *,
+.katex-inline .katex *,
+.katex-display-standalone .katex * {
+  color: inherit !important;
 }
 
-.dark .katex .katex-html .newline {
+.katex-inline .katex,
+.katex-display-standalone .katex {
+  color: var(--foreground) !important;
+}
+
+/* Override KaTeX-specific element colors */
+.katex-inline .mord,
+.katex-inline .mbin,
+.katex-inline .mrel,
+.katex-inline .mopen,
+.katex-inline .mclose,
+.katex-inline .mpunct,
+.katex-inline .minner,
+.katex-inline .mbase,
+.katex-inline .mop,
+.katex-display-standalone .mord,
+.katex-display-standalone .mbin,
+.katex-display-standalone .mrel,
+.katex-display-standalone .mopen,
+.katex-display-standalone .mclose,
+.katex-display-standalone .mpunct,
+.katex-display-standalone .minner,
+.katex-display-standalone .mbase,
+.katex-display-standalone .mop {
+  color: var(--foreground) !important;
+}
+
+.katex-display-standalone .katex-html .newline {
   height: 0.5em;
 }
