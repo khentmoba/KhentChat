@@ -68,6 +68,39 @@ export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');
 }
 
+export interface ThinkingExtraction {
+  thinking: string;
+  display: string;
+}
+
+export function extractThinking(text: string): ThinkingExtraction {
+  let thinking = '';
+  let cleaned = text;
+
+  const tagPattern = /<thinking>([\s\S]*?)<\/thinking>/gi;
+  let match;
+  while ((match = tagPattern.exec(text)) !== null) {
+    const content = match[1].trim();
+    if (content) {
+      thinking += (thinking ? '\n\n' : '') + content;
+    }
+  }
+  cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+
+  const dotsPattern = /\.{3}\n([\s\S]*?)\n\.{3}/g;
+  while ((match = dotsPattern.exec(cleaned)) !== null) {
+    const content = match[1].trim();
+    if (content) {
+      thinking += (thinking ? '\n\n' : '') + content;
+    }
+  }
+  cleaned = cleaned.replace(/\.{3}\n[\s\S]*?\n\.{3}/g, '');
+
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+
+  return { thinking, display: cleaned };
+}
+
 export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
   return messages.map((message) => ({
     id: message.id,

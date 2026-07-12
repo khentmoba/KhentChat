@@ -220,10 +220,12 @@ function CodeBlockDedicated({
   code,
   language,
   showLineNumbers = true,
+  isStreaming = false,
 }: {
   code: string;
   language: string;
   showLineNumbers?: boolean;
+  isStreaming?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -252,6 +254,7 @@ function CodeBlockDedicated({
           <span className="font-mono text-[11px] text-gray-400">{language || "code"}</span>
           <span className="text-[10px] text-gray-600">
             {lineCount} {lineCount === 1 ? "line" : "lines"}
+            {isStreaming && <span className="ml-1 text-gray-500">· streaming</span>}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -296,6 +299,18 @@ function CodeBlockDedicated({
                   </span>
                 </div>
               ))}
+              {isStreaming && (
+                <div className="flex">
+                  {showLineNumbers && (
+                    <span className="mr-4 inline-block w-8 select-none text-right text-gray-600">
+                      {lineCount + 1}
+                    </span>
+                  )}
+                  <span className="flex-1">
+                    <span className="inline-block h-[1.2em] w-[2px] translate-y-[0.2em] animate-pulse bg-gray-400" />
+                  </span>
+                </div>
+              )}
             </code>
           </pre>
         </div>
@@ -314,6 +329,7 @@ interface Block {
   items?: string[];
   content?: string;
   language?: string;
+  closed?: boolean;
 }
 
 // Detect lines that look like headings even without # prefix
@@ -349,6 +365,7 @@ function parseBlocks(text: string): Block[] {
         type: "code-block",
         content: codeLines.join("\n"),
         language: lang || undefined,
+        closed,
       });
       continue;
     }
@@ -493,6 +510,7 @@ function MarkdownBlock({ block }: { block: Block }) {
         <CodeBlockDedicated
           code={block.content ?? ""}
           language={block.language || "text"}
+          isStreaming={block.closed === false}
         />
       );
     case "blockquote":
@@ -519,9 +537,11 @@ function MarkdownBlock({ block }: { block: Block }) {
 function PureMarkdownRenderer({
   content,
   className,
+  isStreaming,
 }: {
   content: string;
   className?: string;
+  isStreaming?: boolean;
 }) {
   const blocks = useMemo(() => parseBlocks(content), [content]);
 
@@ -530,6 +550,12 @@ function PureMarkdownRenderer({
       {blocks.map((block, i) => (
         <MarkdownBlock block={block} key={i} />
       ))}
+      {isStreaming && content.length === 0 && (
+        <div className="flex min-h-[1.5em] items-center text-muted-foreground/50">
+          <span className="inline-block size-1.5 rounded-full bg-foreground/20 thinking-dot" style={{ animationDelay: "0ms" }} />
+          <span className="ml-0.5 inline-block size-1.5 rounded-full bg-foreground/20 thinking-dot" style={{ animationDelay: "200ms" }} />
+        </div>
+      )}
     </div>
   );
 }

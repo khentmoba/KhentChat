@@ -267,6 +267,14 @@ export async function POST(request: Request) {
           onChunk({ chunk }) {
             if (isModelStreamActivity(chunk)) {
               markModelActive();
+              if (process.env.NODE_ENV === "development") {
+                console.log(
+                  `[chat] chunk: ${chunk.type}`,
+                  "text" in chunk
+                    ? (chunk as { text?: string }).text?.slice(0, 50)
+                    : ""
+                );
+              }
             }
           },
           onEnd() {

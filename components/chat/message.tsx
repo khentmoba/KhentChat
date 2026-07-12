@@ -3,9 +3,14 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { useCallback } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
-import { cn, sanitizeText } from "@/lib/utils";
+import { cn, extractThinking, sanitizeText } from "@/lib/utils";
 import { MarkdownRenderer } from "../ai-elements/markdown-renderer";
 import { MessageContent, MessageResponse } from "../ai-elements/message";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "../ai-elements/reasoning";
 import { Shimmer } from "../ai-elements/shimmer";
 import {
   Tool,
@@ -172,25 +177,13 @@ const PurePreviewMessage = ({
       if (!mergedReasoning.rendered && mergedReasoning.text) {
         mergedReasoning.rendered = true;
         return (
-          <details
-            className="mt-2 overflow-hidden rounded-xl border border-border/20 bg-gradient-to-br from-muted/20 to-muted/40"
+          <Reasoning
+            isStreaming={isLoading || mergedReasoning.isStreaming}
             key={key}
-            open={isLoading || mergedReasoning.isStreaming}
           >
-            <summary className="cursor-pointer px-4 py-2.5 text-[12px] font-medium text-muted-foreground/80 transition-colors hover:text-muted-foreground">
-              {isLoading || mergedReasoning.isStreaming ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block size-1.5 rounded-full bg-blue-400/60 thinking-dot" />
-                  Thinking...
-                </span>
-              ) : (
-                "Thought for a moment"
-              )}
-            </summary>
-            <div className="max-h-[200px] overflow-y-auto border-t border-border/10 px-4 pb-3 pt-2 text-[12px] leading-relaxed text-muted-foreground/50">
-              {mergedReasoning.text}
-            </div>
-          </details>
+            <ReasoningTrigger />
+            <ReasoningContent>{mergedReasoning.text}</ReasoningContent>
+          </Reasoning>
         );
       }
       return null;
@@ -198,13 +191,27 @@ const PurePreviewMessage = ({
 
     if (type === "text") {
       if (isAssistant) {
+        const { thinking, display } = extractThinking(part.text);
         return (
           <div
             className="min-w-0 flex-1"
             data-testid="message-content"
             key={key}
           >
-            <MarkdownRenderer content={sanitizeText(part.text)} />
+            {thinking.length > 0 && (
+              <Reasoning
+                className="mb-2"
+                isStreaming={isLoading}
+                key={`${message.id}-thinking-${part.type}`}
+              >
+                <ReasoningTrigger />
+                <ReasoningContent>{thinking}</ReasoningContent>
+              </Reasoning>
+            )}
+            <MarkdownRenderer
+              content={sanitizeText(display)}
+              isStreaming={isLoading}
+            />
           </div>
         );
       }

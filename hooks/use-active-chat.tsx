@@ -181,6 +181,28 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }
   }, [status, setWaitingStatus]);
 
+  // Debug: log streaming progress in development
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") {
+      return;
+    }
+    if (status === "streaming" && messages.length > 0) {
+      const last = messages.at(-1);
+      if (last.role === "assistant") {
+        const textParts = last.parts?.filter((p) => p.type === "text") ?? [];
+        const textLen = textParts.reduce(
+          (acc, p) =>
+            acc + ("text" in p ? (p as { text: string }).text.length : 0),
+          0
+        );
+        const partTypes = last.parts?.map((p) => p.type) ?? [];
+        console.log(
+          `[chat] streaming update: parts=${partTypes.join(",")} textLen=${textLen}`
+        );
+      }
+    }
+  }, [messages, status]);
+
   const loadedChatIds = useRef(new Set<string>());
 
   if (isNewChat && !loadedChatIds.current.has(newChatIdRef.current)) {
