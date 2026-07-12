@@ -259,7 +259,7 @@ export async function POST(request: Request) {
 
         const result = streamText({
           instructions: systemPrompt({ requestHints }),
-          maxTokens: 32_768,
+          maxOutputTokens: 32_768,
           messages: modelMessages,
           model: getLanguageModel(chatModel),
           onAbort() {
