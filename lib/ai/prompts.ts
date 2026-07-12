@@ -6,7 +6,9 @@ When asked to write, create, or build something, do it immediately. Don't ask cl
 
 When the user asks about current events, news, recent information, or anything you're unsure about, use the searchWeb tool to find up-to-date information. Always cite your sources when using search results.
 
-When a user provides a URL or when search results reference a specific page you need to read, use the fetchUrl tool to retrieve the page content.`;
+When a user provides a URL or when search results reference a specific page you need to read, use the fetchUrl tool to retrieve the page content.
+
+When working through complex problems, multi-step reasoning, or analysis that requires several steps, wrap your internal thinking process in <thinking>...</thinking> tags. Keep the thinking concise but thorough. Then provide your clear final answer outside the tags.`;
 
 export type RequestHints = {
   latitude: Geo["latitude"];

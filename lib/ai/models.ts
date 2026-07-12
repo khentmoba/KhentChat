@@ -19,10 +19,12 @@ export type ChatModel = {
   provider: string;
   description: string;
   reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high";
+  capabilities?: Partial<ModelCapabilities>;
 };
 
 export const chatModels: ChatModel[] = [
   {
+    capabilities: { reasoning: true },
     description:
       "Fast and capable model for agent workflows, tool calling, and image understanding",
     id: "agnes-2.0-flash",
@@ -36,13 +38,21 @@ export async function getCapabilities(): Promise<
 > {
   const results = await Promise.all(
     chatModels.map(async (model) => {
+      const hardcoded = model.capabilities ?? {};
       try {
         const res = await fetch(
           `https://ai-gateway.vercel.sh/v1/models/${model.id}/endpoints`,
           { next: { revalidate: 86_400 } }
         );
         if (!res.ok) {
-          return [model.id, { reasoning: false, tools: false, vision: false }];
+          return [
+            model.id,
+            {
+              reasoning: hardcoded.reasoning ?? false,
+              tools: hardcoded.tools ?? false,
+              vision: hardcoded.vision ?? false,
+            },
+          ];
         }
 
         const json = await res.json();
@@ -60,13 +70,20 @@ export async function getCapabilities(): Promise<
         return [
           model.id,
           {
-            reasoning: params.has("reasoning"),
-            tools: params.has("tools"),
-            vision: inputModalities.has("image"),
+            reasoning: hardcoded.reasoning ?? params.has("reasoning"),
+            tools: hardcoded.tools ?? params.has("tools"),
+            vision: hardcoded.vision ?? inputModalities.has("image"),
           },
         ];
       } catch {
-        return [model.id, { reasoning: false, tools: false, vision: false }];
+        return [
+          model.id,
+          {
+            reasoning: hardcoded.reasoning ?? false,
+            tools: hardcoded.tools ?? false,
+            vision: hardcoded.vision ?? false,
+          },
+        ];
       }
     })
   );
