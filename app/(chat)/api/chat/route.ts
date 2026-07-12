@@ -284,9 +284,7 @@ export async function POST(request: Request) {
             stopWaitingStatus();
           },
           providerOptions: {
-            ...(modelConfig?.reasoningEffort && {
-              openai: { reasoningEffort: modelConfig.reasoningEffort },
-            }),
+            agnes: { chat_template_kwargs: { enable_thinking: true } },
           },
           stopWhen: isStepCount(5),
           telemetry: {

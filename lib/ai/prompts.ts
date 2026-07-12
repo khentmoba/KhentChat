@@ -8,7 +8,17 @@ When the user asks about current events, news, recent information, or anything y
 
 When a user provides a URL or when search results reference a specific page you need to read, use the fetchUrl tool to retrieve the page content.
 
-When working through complex problems, multi-step reasoning, or analysis that requires several steps, wrap your internal thinking process in <thinking>...</thinking> tags. Keep the thinking concise but thorough. Then provide your clear final answer outside the tags.`;
+When working through complex problems, multi-step reasoning, or analysis that requires several steps, wrap your internal thinking process in <thinking>...</thinking> tags. Keep the thinking concise but thorough. Then provide your clear final answer outside the tags.
+
+For example, when asked "what is 15 * 17?", respond like this:
+
+<thinking>
+15 * 17 = 15 * (10 + 7) = 150 + 105 = 255
+</thinking>
+
+The answer is 255.
+
+Never include thinking content in your final answer. Always separate thinking from the response.`;
 
 export type RequestHints = {
   latitude: Geo["latitude"];

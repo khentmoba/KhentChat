@@ -30,6 +30,7 @@ export const chatModels: ChatModel[] = [
     id: "agnes-2.0-flash",
     name: "KhentAI",
     provider: "agnes",
+    reasoningEffort: "high",
   },
 ];
 
