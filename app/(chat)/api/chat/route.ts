@@ -285,7 +285,12 @@ export async function POST(request: Request) {
             stopWaitingStatus();
           },
           providerOptions: {
-            agnes: { chat_template_kwargs: { enable_thinking: true } },
+            agnes: {
+              chat_template_kwargs: {
+                budget_tokens: 2048,
+                enable_thinking: true,
+              },
+            },
           },
           stopWhen: isStepCount(5),
           telemetry: {
