@@ -1,5 +1,10 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { customProvider, gateway } from "ai";
+import {
+  customProvider,
+  extractReasoningMiddleware,
+  gateway,
+  wrapLanguageModel,
+} from "ai";
 import { isTestEnvironment } from "../constants";
 import { titleModel } from "./models";
 
@@ -25,7 +30,10 @@ export const myProvider = isTestEnvironment
   : customProvider({
       fallbackProvider: gateway,
       languageModels: {
-        "agnes-2.0-flash": agnes.chatModel("agnes-2.0-flash"),
+        "agnes-2.0-flash": wrapLanguageModel({
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+          model: agnes.chatModel("agnes-2.0-flash"),
+        }),
       },
     });
 
