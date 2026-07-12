@@ -1,6 +1,9 @@
-import { put } from "@vercel/blob";
+import { Storage } from "@google-cloud/storage";
 import { nanoid } from "nanoid";
 import { auth } from "@/app/(auth)/auth";
+
+const storage = new Storage();
+const bucket = storage.bucket(process.env.GOOGLE_STORAGE_BUCKET ?? "");
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -22,14 +25,16 @@ export async function POST(request: Request) {
   const ext = file.name.split(".").pop() ?? "";
   const pathname = `${nanoid()}.${ext}`;
 
-  const blob = await put(pathname, buffer, {
-    access: "public",
+  const blob = bucket.file(pathname);
+  await blob.save(buffer, {
     contentType: file.type || "application/octet-stream",
   });
+
+  const url = `https://storage.googleapis.com/${bucket.name}/${pathname}`;
 
   return Response.json({
     contentType: file.type,
     pathname: file.name,
-    url: blob.url,
+    url,
   });
 }

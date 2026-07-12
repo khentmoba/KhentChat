@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.github
+.vercel
+.env*
+!.env.example
+*.md
+Dockerfile
+.dockerignore
+firebase.json
+.firebaserc
+playwright-report
+test-results

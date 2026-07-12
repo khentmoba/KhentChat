@@ -1,4 +1,3 @@
-import { geolocation, ipAddress } from "@vercel/functions";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -43,7 +42,20 @@ import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
-export const maxDuration = 60;
+function getClientIp(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "127.0.0.1"
+  );
+}
+
+function getGeolocation(request: Request) {
+  return {
+    city: request.headers.get("x-country") ?? null,
+    country: request.headers.get("x-country") ?? null,
+    latitude: null as number | null,
+    longitude: null as number | null,
+  };
+}
 
 const HEALTH_CHECK_DELAY_MS = 5000;
 
@@ -90,7 +102,7 @@ export async function POST(request: Request) {
     const userType: UserType = session.user.type;
 
     const [_rateLimitResult, messageCount, chat] = await Promise.all([
-      checkIpRateLimit(ipAddress(request)),
+      checkIpRateLimit(getClientIp(request)),
       getMessageCountByUserId({
         differenceInHours: 1,
         id: session.user.id,
@@ -160,7 +172,7 @@ export async function POST(request: Request) {
       ];
     }
 
-    const { longitude, latitude, city, country } = geolocation(request);
+    const { longitude, latitude, city, country } = getGeolocation(request);
 
     const requestHints: RequestHints = {
       city,
@@ -399,8 +411,6 @@ export async function POST(request: Request) {
       stream,
     });
   } catch (error) {
-    const vercelId = request.headers.get("x-vercel-id");
-
     if (error instanceof ChatbotError) {
       return error.toResponse();
     }
@@ -414,7 +424,7 @@ export async function POST(request: Request) {
       return new ChatbotError("bad_request:activate_gateway").toResponse();
     }
 
-    console.error("Unhandled error in chat API:", error, { vercelId });
+    console.error("Unhandled error in chat API:", error);
     return new ChatbotError("offline:chat").toResponse();
   }
 }

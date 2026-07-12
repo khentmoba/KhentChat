@@ -1,0 +1,18 @@
+{
+  "hosting": {
+    "public": "out",
+    "ignore": ["firebase.json", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "khentchat",
+          "region": "us-central1"
+        }
+      }
+    ]
+  },
+  "functions": {
+    "source": "."
+  }
+}
