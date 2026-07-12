@@ -286,10 +286,8 @@ export async function POST(request: Request) {
           },
           providerOptions: {
             agnes: {
-              chat_template_kwargs: {
-                budget_tokens: 2048,
-                enable_thinking: true,
-              },
+              chat_template_kwargs: { enable_thinking: true },
+              thinking: { budget_tokens: 2048, type: "enabled" },
             },
           },
           stopWhen: isStepCount(5),
