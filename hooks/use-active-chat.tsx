@@ -188,7 +188,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
     }
     if (status === "streaming" && messages.length > 0) {
       const last = messages.at(-1);
-      if (last.role === "assistant") {
+      if (last?.role === "assistant") {
         const textParts = last.parts?.filter((p) => p.type === "text") ?? [];
         const textLen = textParts.reduce(
           (acc, p) =>
