@@ -1,5 +1,6 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
+import Image from "next/image";
 import { useCallback } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -141,17 +142,42 @@ const PurePreviewMessage = ({
 
   const attachments = attachmentsFromMessage.length > 0 && (
     <div
-      className="flex flex-row justify-end gap-2"
+      className="flex flex-row flex-wrap justify-end gap-2"
       data-testid={"message-attachments"}
     >
-      {attachmentsFromMessage.map((attachment) => (
-        <div
-          className="flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground"
-          key={attachment.url}
-        >
-          {attachment.filename ?? "file"}
-        </div>
-      ))}
+      {attachmentsFromMessage.map((attachment) => {
+        const isImage =
+          "mediaType" in attachment &&
+          typeof attachment.mediaType === "string" &&
+          attachment.mediaType.startsWith("image/");
+
+        if (
+          isImage &&
+          "url" in attachment &&
+          typeof attachment.url === "string"
+        ) {
+          return (
+            <Image
+              alt={attachment.filename ?? "image"}
+              className="max-h-[300px] max-w-[400px] rounded-lg border border-border/30 object-contain shadow-[var(--shadow-card)]"
+              height={300}
+              key={attachment.url}
+              src={attachment.url}
+              unoptimized
+              width={400}
+            />
+          );
+        }
+
+        return (
+          <div
+            className="flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground"
+            key={attachment.url}
+          >
+            {attachment.filename ?? "file"}
+          </div>
+        );
+      })}
     </div>
   );
 

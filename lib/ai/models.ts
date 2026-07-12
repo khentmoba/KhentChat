@@ -24,7 +24,7 @@ export type ChatModel = {
 
 export const chatModels: ChatModel[] = [
   {
-    capabilities: { reasoning: true },
+    capabilities: { reasoning: true, vision: true },
     description:
       "Fast and capable model for agent workflows, tool calling, and image understanding",
     id: "agnes-2.0-flash",

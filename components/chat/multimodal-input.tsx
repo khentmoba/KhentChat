@@ -488,6 +488,7 @@ function PureMultimodalInput({
         )}
 
       <input
+        accept="image/*"
         className="pointer-events-none fixed -top-4 -left-4 size-0.5 opacity-0"
         multiple
         onChange={handleFileChange}
@@ -647,9 +648,19 @@ function PureAttachmentPreviewItem({
     }
   }, [attachment.url, fileInputRef, setAttachments]);
 
+  const isImage = attachment.contentType.startsWith("image/");
+
   return (
     <div className="relative flex items-center gap-1.5 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-[12px] text-muted-foreground">
-      {attachment.name}
+      {isImage ? (
+        // biome-ignore lint/performance/noImgElement: thumbnail for local blob URLs
+        <img
+          alt={attachment.name}
+          className="size-8 rounded object-cover"
+          src={attachment.url}
+        />
+      ) : null}
+      <span className="max-w-[120px] truncate">{attachment.name}</span>
       <button
         className="ml-1 text-muted-foreground/50 hover:text-foreground"
         onClick={handleRemove}
